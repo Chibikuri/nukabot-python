@@ -4,6 +4,7 @@ from slackbot.bot import default_reply
 from datetime import datetime as dt
 from datetime import timedelta as delta
 import json
+
 veg_list = []
 listing = {'きゅうり': 14,
            '大根': 24,
@@ -29,7 +30,7 @@ def default(message):
 
 def add_vegetable(message, veg, time):
     n = int(list(message.body['text'])[-1])
-    veg_list.append((veg, n, dt.now() + delta(hours=time)))
+    veg_list.append([veg, n, dt.now() + delta(hours=time), dt.now()])
     message.reply(veg + 'を追加しました！')
     num = 0
     for i in veg_list:
@@ -68,27 +69,23 @@ def pre_tabegoro(message):
 
 @respond_to('とる')
 def take(message):
-    attachments = [{
-        "fallback": "Upgrade your Slack client to use messages like these.",
-        "color": "#258ab5",
-        "attachment_type": "default",
-        "callback_id": "the_greatest_war",
-        "actions": [
-            {
-                "name": "choco1",
-                "text": "人参",
-                "value": "kinoko",
-                "type": "button"
-            },
-            {
-                "name": "choco2",
-                "text": "たけのこ",
-                "value": "takenoko",
-                "type": "button"
-            }
-        ]
-    }]
-    a = message.send_webapi('', json.dumps(attachments))
     take_veg = message.body['text']
+    vens = take_veg.split(' ')
+    if len(vens) != 3:
+        message.reply('もう一度入力してください.ex(とる きゅうり 2)')
+    else:
+        num = int(vens[-1])
+        for i, val in enumerate(veg_list):
+            if val[0] == vens[1]:
+                val[1] = val[1] - num
+                message.reply(val[0] + 'を' + str(num) + '本とりました．')
+                if val[1] == 0:
+                    message.reply(str(val[3]) + 'に漬けた' + val[0] + 'を全てとりました.')
+                    del veg_list[i]
+                if val[1] < 0:
+                    message.reply(str(val[3]) + 'に漬けた' + val[0] + 'を' + str(val[1]) + '本全てとりました')
+                    del veg_list[i]
+            break
+    content(message)
     print(veg_list)
-    print(a)
+
